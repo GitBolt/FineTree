@@ -1,67 +1,120 @@
 use std::io;
-use std::collections::HashMap;
+use std::fmt::Debug;
 use colored::*;
+
+
+// FoF: Folder or File
+#[derive(PartialEq)]
+#[derive(Debug)]
+enum FoF{
+    Folder{name:String, files:Vec<FoF>},
+    File{name:String, extension:String},
+}
+
 
 struct FileTree{
     root: String,
-    folders: HashMap<String, Vec<String>>,
-    location: String,
-
+    tree: Vec<FoF>,
+    location: FoF,
 }
+
+fn get_name(en: &FoF) -> &String {
+  use FoF::*;
+  match en {
+    Folder{name, files:_} => name,
+    File{name, extension:_} => name,
+  }
+}
+
+
+fn get_files(e: &FoF) -> Option<&Vec<FoF>> {
+  use FoF::*;
+  match e {
+    Folder{name:_, files} => Some(files),
+    _ => None,
+  }
+}
+
+
+
 impl FileTree{
-    fn new(root_name:String) -> Self {
-        FileTree{
-            root: root_name.clone(),
-            folders: HashMap::new(),
-            location: root_name,
-        }
+
+    fn new(root_name:String) -> Self{
+      let root_name = root_name.replace("\n", "");
+      FileTree{
+        root: root_name.clone(),
+        tree: vec![FoF::Folder{name: root_name.clone(), files: Vec::new()}],
+        location: FoF::Folder{name:root_name.clone(), files:Vec::new()},
+      }
     }
-    
-    fn ls(&self){
-        if self.folders.get(&self.location) != None{
-            let files = self.folders.get(&self.location).unwrap();
-            let mut display_file = String::from("");
-            for file in files{
-                display_file.push_str(&format!("{} ", file.replace("\n", "")));
+
+    fn ls(&mut self){
+        let mut _files = String::new();
+        for x in self.tree.iter(){
+          if get_name(x) == get_name(&self.location){
+            for i in get_files(x){
+              println!("{:?}", i);
             }
-            println!("{}", display_file.blue());
+          }
         }
-    }
+        println!("{:?}", self.tree);
+        }
+
 
     fn mkdir(&mut self, input:String){
-        let arg_vec: Vec<&str> = input.split(" ").collect();
-        if arg_vec.len() < 2{
-            println!("mkdir: missing operhand");
+      let arg_vec: Vec<&str> = input.split(" ").collect();
+      if arg_vec.len() < 2 || arg_vec[1] == "\n"{
+        println!("mkdir: missing operhand");
+      }else{
+        let new_dir = FoF::Folder{name:arg_vec[1].to_string().replace("\n", ""), files:Vec::new()};
+        if get_name(&self.location) == &self.root{
+          self.tree.push(new_dir);
         }else{
-            self.folders.insert(arg_vec[1].to_string(),Vec::new());
+    
+          let folder_index = self.tree.iter().position(|r| r == &self.location).unwrap();
+          self.tree[folder_index] = new_dir;
         }
+
+      }
     }
 
     fn touch(&mut self, input:String){
         let arg_vec: Vec<&str> = input.split(" ").collect();
         if arg_vec.len() < 2{
-            println!("touch: missing file operand");
+          println!("touch: missing file operhand");
         }else{
-            self.folders.entry(self.location.clone()).or_insert_with(Vec::new).push(arg_vec[1].to_string());
-        }   
-    }
+          if get_name(&self.location) == &self.root{
+            let file_name = arg_vec[1].to_string().replace("\n", "");
+            let split = file_name.split(".").collect::<Vec<&str>>().clone();
+            let new_file = FoF::File{name:split[0].to_string(), extension:split[1].to_string()};
+            self.tree.push(new_file);
+          }else{
+            let folder_index = self.tree.iter().position(|r| r == &self.location).unwrap();
+            println!("touch: {:?}",self.tree[folder_index]);
+          }
+
+        }
+      }
+
     fn cd(&mut self, input:String){
-        let arg_vec: Vec<&str> = input.split(" ").collect();
-        if arg_vec.len() < 2{
-            self.location = String::from(&self.root);
-        }else{
-            if self.folders.contains_key(arg_vec[1]){
-                self.location = arg_vec[1].to_string();
-            }
-            // else if arg_vec[1] == ".."{
-            //     self.location =        
-            // }
-            else{ 
-                println!("cd: {}: No such file or directory", arg_vec[1].to_string().replace("\n", ""));
+      let arg_vec: Vec<&str> = input.split(" ").collect();
+      if arg_vec.len() < 2{
+        for file in self.tree.iter(){
+            if get_name(file) == &self.root{
+              //self.location = file;
             }
         }
+      }else{
+        for file in self.tree.iter(){
+          if get_name(file) == arg_vec[1]{
+            //self.location = file;
+          }
+        }
+      }
     }
 }
+
+
 
 fn main(){
 
@@ -70,11 +123,15 @@ fn main(){
     println!("Enter the root folder name of your project:");
     let mut root_name: String = String::new();
     io::stdin().read_line(&mut root_name).ok().expect("Failed to get your input, try again.");
-    let mut filetree:FileTree = FileTree::new(root_name);
-    let success_message = "Created the project root with name".to_string();
-    let root_name = &filetree.root.replace("\n", "");
-    let continue_message = "Continue with created rest of the file tree and type 'done' to complete.".to_string();
-    println!("{} {}.\n{}", success_message.green(), root_name.green().bold().underline(), continue_message.green());
+    let mut filetree:FileTree = FileTree::new(root_name.replace("\n", ""));
+
+    println!(
+    "{} {}.\n{}",
+    "Created the project root with name".green(), 
+    &filetree.root.green().bold().underline(), 
+    "Continue creating rest of the file tree and type 'done' to complete.".green(),
+    );
+
     let mut completed:bool = false;  
 
     while completed == false{
@@ -97,9 +154,12 @@ fn main(){
         }else if input.starts_with("touch"){
             filetree.touch(input)
 
+        } else if input.starts_with("show"){
+            //println!("{:?}", filetree.folders)
         }
         else if input != "\n"{
             println!("{}", format!("{}: command not found", input.replace("\n", "")).red());
+        
         }
     }
 }
