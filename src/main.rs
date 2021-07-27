@@ -67,8 +67,10 @@ impl FileTree{
           self.tree.push(new_dir);
         }else{
     
-          let _folder_index = self.tree.iter().position(|r| r == &self.location).unwrap();
-         // self.tree[folder_index].files.pus_str(new_dir);
+          let folder_index = self.tree.iter().position(|r| r == &self.location).unwrap();
+          if let FoF::Folder{name:_, files} = &mut self.tree[folder_index]{
+            files.push(new_dir);
+          };
         }
 
       }
@@ -159,7 +161,7 @@ fn main(){
             filetree.touch(input)
 
         } else if input.starts_with("show"){
-            //println!("{:?}", filetree.folders)
+            println!("{:?}", filetree.tree)
         }
         else if input != "\n"{
             println!("{}", format!("{}: command not found", input.replace("\n", "")).red());
