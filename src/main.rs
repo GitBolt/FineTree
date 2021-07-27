@@ -26,11 +26,11 @@ fn get_name(en: &FoF) -> &String {
 }
 
 
-fn get_files(e: &FoF) -> Option<&Vec<FoF>> {
+fn get_files(e: &FoF) -> &Vec<FoF> {
   use FoF::*;
   match e {
-    Folder{name:_, files} => Some(files),
-    _ => None,
+    Folder{name:_, files} => files,
+    _ => panic!("Dang it, something went wrong"),
   }
 }
 
@@ -47,14 +47,18 @@ impl FileTree{
     }
 
     fn ls(&mut self){
-      let mut _files = String::new();
+      let mut files = String::new();
+      let mut file = Vec::new();
       for x in self.tree.iter(){
         if get_name(x) == get_name(&self.location){
-          for i in get_files(x){
-            println!("{:?}", i);
-          }
+          file = get_files(x).clone();
+          break
         }
       }
+      for f in file.iter(){
+        files.push_str(&format!("{} ", get_name(&f)));
+      }
+      println!("{}", files)
     }
 
     fn mkdir(&mut self, input:String){
@@ -78,19 +82,20 @@ impl FileTree{
 
     fn touch(&mut self, input:String){
         let arg_vec: Vec<&str> = input.split(" ").collect();
-        if arg_vec.len() < 2{
+        if arg_vec.len() < 2 || arg_vec[1] == "\n"{
           println!("touch: missing file operhand");
         }else{
-          if get_name(&self.location) == &self.root{
-            let file_name = arg_vec[1].to_string().replace("\n", "");
-            let split = file_name.split(".").collect::<Vec<&str>>().clone();
-            let new_file = FoF::File{name:split[0].to_string(), extension:split[1].to_string()};
+          let file_name = arg_vec[1].to_string().replace("\n", "");
+          let split = file_name.split(".").collect::<Vec<&str>>().clone();
+          let new_file = FoF::File{name:file_name.to_string(), extension:split[1].to_string()};
+          if get_name(&self.location) == &self.root{           
             self.tree.push(new_file);
           }else{
-            let folder_index = self.tree.iter().position(|r| r == &self.location).unwrap();
-            println!("touch: {:?}",self.tree[folder_index]);
+            let file_index = self.tree.iter().position(|r| r == &self.location).unwrap();
+            if let FoF::Folder{name:_, files} = &mut self.tree[file_index]{
+              files.push(new_file);
+            };
           }
-
         }
       }
 
