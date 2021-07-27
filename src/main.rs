@@ -5,12 +5,11 @@ use colored::*;
 
 // FoF: Folder or File
 #[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum FoF{
     Folder{name:String, files:Vec<FoF>},
     File{name:String, extension:String},
 }
-
 
 struct FileTree{
     root: String,
@@ -36,7 +35,6 @@ fn get_files(e: &FoF) -> Option<&Vec<FoF>> {
 }
 
 
-
 impl FileTree{
 
     fn new(root_name:String) -> Self{
@@ -49,17 +47,15 @@ impl FileTree{
     }
 
     fn ls(&mut self){
-        let mut _files = String::new();
-        for x in self.tree.iter(){
-          if get_name(x) == get_name(&self.location){
-            for i in get_files(x){
-              println!("{:?}", i);
-            }
+      let mut _files = String::new();
+      for x in self.tree.iter(){
+        if get_name(x) == get_name(&self.location){
+          for i in get_files(x){
+            println!("{:?}", i);
           }
         }
-        println!("{:?}", self.tree);
-        }
-
+      }
+    }
 
     fn mkdir(&mut self, input:String){
       let arg_vec: Vec<&str> = input.split(" ").collect();
@@ -71,8 +67,8 @@ impl FileTree{
           self.tree.push(new_dir);
         }else{
     
-          let folder_index = self.tree.iter().position(|r| r == &self.location).unwrap();
-          self.tree[folder_index] = new_dir;
+          let _folder_index = self.tree.iter().position(|r| r == &self.location).unwrap();
+         // self.tree[folder_index].files.pus_str(new_dir);
         }
 
       }
@@ -98,17 +94,25 @@ impl FileTree{
 
     fn cd(&mut self, input:String){
       let arg_vec: Vec<&str> = input.split(" ").collect();
+      
       if arg_vec.len() < 2{
         for file in self.tree.iter(){
-            if get_name(file) == &self.root{
-              //self.location = file;
-            }
+          if get_name(&file) == get_name(&self.location){
+            self.location = file.clone();
+          } 
         }
-      }else{
+      }
+      else{
+        let dir_name = arg_vec[1].replace("\n", "");
+        let mut check:bool = false;
         for file in self.tree.iter(){
-          if get_name(file) == arg_vec[1]{
-            //self.location = file;
+          if get_name(&file) == &dir_name{
+            check = true;
+            self.location = file.clone();
           }
+        }
+        if check == false{
+          println!("cd: {}: No such file or directory", dir_name)
         }
       }
     }
