@@ -64,9 +64,9 @@ impl FileTree{
       }
       for f in file.iter(){
         if get_type(f) == "Folder"{
-          files.push_str(&format!("{} ", get_name(&f).blue()));
+          files.push_str(&format!("{} ", get_name(&f).blue().bold()));
         }else{
-          files.push_str(&format!("{} ", get_name(&f)));
+          files.push_str(&format!("{} ", get_name(&f).bold()));
         }
         
       }
@@ -76,7 +76,7 @@ impl FileTree{
     fn mkdir(&mut self, input:String){
       let arg_vec: Vec<&str> = input.split(" ").collect();
       if arg_vec.len() < 2 || arg_vec[1] == "\n"{
-        println!("mkdir: missing operhand");
+        println!("{}", "mkdir: missing operhand".yellow());
       }
       else{
         let new_dir = FoF::Folder{name:arg_vec[1].to_string().replace("\n", ""), files:Vec::new()};
@@ -97,7 +97,7 @@ impl FileTree{
     fn touch(&mut self, input:String){
       let arg_vec: Vec<&str> = input.split(" ").collect();
       if arg_vec.len() < 2 || arg_vec[1] == "\n"{
-        println!("touch: missing file operhand");
+        println!("{}","touch: missing file operhand".yellow());
       }
       else{
         let file_name = arg_vec[1].to_string().replace("\n", "");
@@ -155,7 +155,7 @@ fn main(){
 
     print_beginning();
 
-    println!("Enter the root folder name of your project:");
+    println!("But first, enter the root folder name of your project:");
     let mut root_name: String = String::new();
     io::stdin().read_line(&mut root_name).ok().expect("Failed to get your input, try again.");
     let mut filetree:FileTree = FileTree::new(root_name.replace("\n", ""));
@@ -209,9 +209,9 @@ fn print_beginning(){
         | |__| | \__ \ (_| (_) | | | (_| |  | |  | | (__| | | |  | | | | |  __/  | |_| | |  __/  __/
         |_____/|_|___/\___\___/|_|  \__,_|  |_|  |_|\___|_| |_|  |_| |_|_|\___|   \__|_|  \___|\___|                                                                                                                                                 
 
-        ".cyan().bold());
+        ".bright_cyan().bold());
 
-    println!("{}", "Commands".white().underline());
-    println!("{}", "ls, mkdir, cd, touch".magenta());
+    println!("{}", "Commands".bright_white().underline());
+    println!("{}\n", "ls, mkdir, cd, touch".bright_cyan().bold());
 
 }
