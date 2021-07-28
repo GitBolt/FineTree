@@ -25,6 +25,13 @@ fn get_name(en: &FoF) -> &String {
   }
 }
 
+fn get_type(en: &FoF) -> String {
+  use FoF::*;
+  match en {
+    Folder{name:_, files:_} => String::from("Folder"),
+    File{name:_, extension:_} => String::from("File"),
+  }
+}
 
 fn get_files(e: &FoF) -> &Vec<FoF> {
   use FoF::*;
@@ -56,7 +63,12 @@ impl FileTree{
         }
       }
       for f in file.iter(){
-        files.push_str(&format!("{} ", get_name(&f)));
+        if get_type(f) == "Folder"{
+          files.push_str(&format!("{} ", get_name(&f).blue()));
+        }else{
+          files.push_str(&format!("{} ", get_name(&f)));
+        }
+        
       }
       println!("{}", files)
     }
@@ -65,35 +77,47 @@ impl FileTree{
       let arg_vec: Vec<&str> = input.split(" ").collect();
       if arg_vec.len() < 2 || arg_vec[1] == "\n"{
         println!("mkdir: missing operhand");
-      }else{
+      }
+      else{
         let new_dir = FoF::Folder{name:arg_vec[1].to_string().replace("\n", ""), files:Vec::new()};
         if get_name(&self.location) == &self.root{
-          self.tree.push(new_dir);
-        }else{
-    
+          if let FoF::Folder{name:_, files} = &mut self.tree[0]{
+            files.push(new_dir);
+        }
+        else{
           let folder_index = self.tree.iter().position(|r| r == &self.location).unwrap();
           if let FoF::Folder{name:_, files} = &mut self.tree[folder_index]{
             files.push(new_dir);
           };
         }
-
+      }
       }
     }
 
     fn touch(&mut self, input:String){
-        let arg_vec: Vec<&str> = input.split(" ").collect();
-        if arg_vec.len() < 2 || arg_vec[1] == "\n"{
-          println!("touch: missing file operhand");
-        }else{
-          let file_name = arg_vec[1].to_string().replace("\n", "");
-          let split = file_name.split(".").collect::<Vec<&str>>().clone();
-          let new_file = FoF::File{name:file_name.to_string(), extension:split[1].to_string()};
-          if get_name(&self.location) == &self.root{           
-            self.tree.push(new_file);
-          }else{
-            let file_index = self.tree.iter().position(|r| r == &self.location).unwrap();
-            if let FoF::Folder{name:_, files} = &mut self.tree[file_index]{
+      let arg_vec: Vec<&str> = input.split(" ").collect();
+      if arg_vec.len() < 2 || arg_vec[1] == "\n"{
+        println!("touch: missing file operhand");
+      }
+      else{
+        let file_name = arg_vec[1].to_string().replace("\n", "");
+        let split = file_name.split(".").collect::<Vec<&str>>().clone();
+        let new_file = FoF::File{name:file_name.to_string(), extension:split[1].to_string()};
+
+        if get_name(&self.location) == &self.root{           
+          if let FoF::Folder{name:_, files} = &mut self.tree[0]{
+            files.push(new_file);
+          }
+        }
+        else{
+          let file_index = self.tree.iter().position(|r| r == &self.location);
+          match file_index{
+            Some(_file_index) => {
+              if let FoF::Folder{name:_, files} = &mut self.tree[file_index.unwrap()]{
               files.push(new_file);
+              }
+            },
+            None => println!("Something went wrong, try again"),
             };
           }
         }
